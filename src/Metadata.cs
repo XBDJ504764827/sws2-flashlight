@@ -12,7 +12,7 @@ namespace Sws2Flashlight;
     Version = "Local",
 #endif
     Name = "sws2-flashlight",
-    Author = "sws2-flashlight Team",
+    Author = "XBDJ504764827",
     Description = "A flashlight plugin for SwiftlyS2: press F to toggle your flashlight.",
     Website = "https://github.com/XBDJ504764827/sws2-flashlight"
 )]

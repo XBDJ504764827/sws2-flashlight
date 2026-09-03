@@ -10,12 +10,21 @@
     },
     "Light": {
       "Color": "#FFFFFF",
+      "ColorTemperature": 6500.0,
       "Brightness": 1.0,
-      "Range": 2000.0,
-      "Theta": 15.0,
-      "Phi": 25.0,
-      "Falloff": 1.0,
-      "CastShadows": false,
+      "Range": 2048.0,
+      "CastShadows": true,
+      "LightCookie": "materials/effects/lightcookies/flashlight.vtex",
+      "SizeX": 45.0,
+      "SizeY": 45.0,
+      "SizeZ": 0.03,
+      "SoftX": 1.0,
+      "SoftY": 1.0,
+      "Skirt": 0.5,
+      "SkirtNear": 1.0,
+      "ForwardDistance": 54.0,
+      "StandEyeOffsetZ": 64.0,
+      "CrouchEyeOffsetZ": 46.0,
       "OwnerOnly": true
     }
   }

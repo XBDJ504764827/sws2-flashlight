@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
+using SwiftlyS2.Shared.EntitySystem;
 using SwiftlyS2.Shared.Misc;
 using SwiftlyS2.Shared.Natives;
 using SwiftlyS2.Shared.Players;
@@ -9,7 +10,7 @@ using Sws2Flashlight.Configuration;
 namespace Sws2Flashlight.Services;
 
 /// <summary>
-/// Wraps a dynamically created <c>light_spot</c> entity that acts as a player-owned flashlight.
+/// Wraps a dynamically created <c>light_barn</c> entity that acts as a player-owned flashlight.
 /// The entity follows the owner's eye position and view angles.
 /// </summary>
 public sealed class FlashlightEntity : IDisposable
@@ -21,7 +22,7 @@ public sealed class FlashlightEntity : IDisposable
     private readonly FlashlightConfig _config;
     private readonly int _playerId;
 
-    private CLightSpotEntity? _light;
+    private CBarnLight? _light;
     private bool _disposed;
 
     public FlashlightEntity(ISwiftlyCore core, FlashlightConfig config, int playerId)
@@ -50,17 +51,22 @@ public sealed class FlashlightEntity : IDisposable
 
         try
         {
-            _light = _core.EntitySystem.CreateEntity<CLightSpotEntity>();
+            _light = _core.EntitySystem.CreateEntity<CBarnLight>();
             if (_light == null || !_light.IsValid)
             {
-                _core.Logger.LogWarning("[sws2-flashlight] Failed to create light_spot entity for player {PlayerId}", _playerId);
+                _core.Logger.LogWarning("[sws2-flashlight] Failed to create light_barn entity for player {PlayerId}", _playerId);
                 return;
             }
 
             ApplyAppearance();
-            _light.DispatchSpawn();
+            UpdateTransform();
 
-            // Position light at the eye at spawn
+            // Spawn with the light cookie keyvalue (beam texture)
+            using var kv = new CEntityKeyValues();
+            kv.SetString("lightcookie", _config.Light.LightCookie);
+            _light.DispatchSpawn(kv);
+
+            // Position again after spawn (transform is applied pre-spawn for the beam)
             UpdateTransform();
 
             // Restrict visibility to owner if configured
@@ -78,7 +84,7 @@ public sealed class FlashlightEntity : IDisposable
     }
 
     /// <summary>
-    /// Applies configured color / brightness / range / cone angles to the light component.
+    /// Applies configured color / brightness / range / beam shape to the light entity.
     /// </summary>
     private void ApplyAppearance()
     {
@@ -87,31 +93,41 @@ public sealed class FlashlightEntity : IDisposable
             return;
         }
 
-        var component = _light.CLightComponent;
-        if (component == null)
-        {
-            return;
-        }
+        // Enable the light - critical! Without this the light stays dormant.
+        _light.Enabled = true;
 
-        // Parse color from hex string (#RRGGBB or #RRGGBBAA)
-        var color = ParseColor(_config.Light.Color);
+        // Beam shape (X/Y are the beam cross size, Z is beam depth; small Z makes a flat beam)
+        _light.SizeParams = new Vector(_config.Light.SizeX, _config.Light.SizeY, _config.Light.SizeZ);
+        _light.SoftX = _config.Light.SoftX;
+        _light.SoftY = _config.Light.SoftY;
+        _light.Skirt = _config.Light.Skirt;
+        _light.SkirtNear = _config.Light.SkirtNear;
 
-        component.Color = color;
-        component.Brightness = Math.Clamp(_config.Light.Brightness, 0f, 32f);
-        component.Range = Math.Clamp(_config.Light.Range, 0f, 32768f);
-        component.Theta = Degree(_config.Light.Theta);
-        component.Phi = Degree(_config.Light.Phi);
-        component.Falloff = _config.Light.Falloff;
-        component.CastShadows = _config.Light.CastShadows ? 1 : 0;
+        // Light properties
+        _light.Color = ParseColor(_config.Light.Color);
+        _light.ColorTemperature = Math.Clamp(_config.Light.ColorTemperature, 1000f, 12000f);
+        _light.Brightness = Math.Clamp(_config.Light.Brightness, 0f, 32f);
+        _light.Range = Math.Clamp(_config.Light.Range, 1f, 32768f);
+        _light.CastShadows = _config.Light.CastShadows ? 1 : 0;
+
+        // Direct light mode (3 = full dynamic light contribution)
+        _light.DirectLight = 3;
+        _light.BounceLight = 0;
 
         // Notify network of changes
-        component.ColorUpdated();
-        component.BrightnessUpdated();
-        component.RangeUpdated();
-        component.ThetaUpdated();
-        component.PhiUpdated();
-        component.FalloffUpdated();
-        component.CastShadowsUpdated();
+        _light.EnabledUpdated();
+        _light.SizeParamsUpdated();
+        _light.SoftXUpdated();
+        _light.SoftYUpdated();
+        _light.SkirtUpdated();
+        _light.SkirtNearUpdated();
+        _light.ColorUpdated();
+        _light.ColorTemperatureUpdated();
+        _light.BrightnessUpdated();
+        _light.RangeUpdated();
+        _light.CastShadowsUpdated();
+        _light.DirectLightUpdated();
+        _light.BounceLightUpdated();
     }
 
     /// <summary>
@@ -131,19 +147,29 @@ public sealed class FlashlightEntity : IDisposable
             return;
         }
 
-        var eyePos = pawn.EyePosition;
-        var eyeAngles = pawn.EyeAngles;
-
-        if (eyePos.HasValue == false)
+        var absOrigin = pawn.AbsOrigin;
+        var vAngle = pawn.V_angle;
+        if (absOrigin == null)
         {
             return;
         }
 
-        // Place the light a bit in front of the eye to avoid the light being fully inside the player model.
-        eyeAngles.ToDirectionVectors(out var forward, out _, out _);
-        var origin = eyePos.Value + forward * 10f;
+        var originVec = absOrigin.Value;
 
-        _light!.Teleport(origin, eyeAngles, null);
+        // Eye height offset (crouch detection not available here; use standing offset)
+        var eyeOffsetZ = _config.Light.StandEyeOffsetZ;
+
+        // Compute forward vector on horizontal plane (yaw only) for origin offset,
+        // then use the FULL pitch for the light rotation so the beam follows the view.
+        var yawRad = vAngle.Y * (MathF.PI / 180f);
+        var forward = new Vector(MathF.Cos(yawRad), MathF.Sin(yawRad), 0f);
+
+        var origin = new Vector(
+            originVec.X + forward.X * _config.Light.ForwardDistance,
+            originVec.Y + forward.Y * _config.Light.ForwardDistance,
+            originVec.Z + eyeOffsetZ);
+
+        _light!.Teleport(origin, vAngle, null);
     }
 
     /// <summary>
@@ -185,8 +211,7 @@ public sealed class FlashlightEntity : IDisposable
                 var r = byte.Parse(value.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
                 var g = byte.Parse(value.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
                 var b = byte.Parse(value.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
-                var a = value.Length >= 8 ? byte.Parse(value.Substring(6, 2), System.Globalization.NumberStyles.HexNumber) : (byte)255;
-                return new Color(r, g, b, a);
+                return new Color(r, g, b);
             }
         }
         catch
@@ -194,8 +219,6 @@ public sealed class FlashlightEntity : IDisposable
             // ignore and fallback
         }
 
-        return new Color(255, 255, 255, 255);
+        return new Color(255, 255, 255);
     }
-
-    private static float Degree(float value) => value * MathF.PI / 180f;
 }
