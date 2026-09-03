@@ -60,20 +60,33 @@ First run creates `csgo/addons/swiftlys2/configs/sws2-flashlight/config.jsonc`
     },
 
     "Light": {
-      // Light color (hex RGB / RGBA)
+      // Light color (hex RGB)
       "Color": "#FFFFFF",
+      // Color temperature in Kelvin (1000-12000); 6500K = daylight white
+      "ColorTemperature": 6500.0,
       // Light brightness (float, engine clamps internally)
       "Brightness": 1.0,
-      // Maximum range in game units (1 unit ≈ 1 cm; 2000 ≈ 20m)
-      "Range": 2000.0,
-      // Spot cone inner angle (degrees)
-      "Theta": 15.0,
-      // Spot cone outer angle (degrees)
-      "Phi": 25.0,
-      // Light falloff
-      "Falloff": 1.0,
-      // Cast shadows (more expensive)
-      "CastShadows": false,
+      // Maximum range in game units (1 unit ≈ 1 cm; 2048 ≈ 20m)
+      "Range": 2048.0,
+      // Cast shadows (more realistic but more expensive)
+      "CastShadows": true,
+      // Beam texture path for the light cookie projection
+      "LightCookie": "materials/effects/lightcookies/flashlight.vtex",
+      // Beam cross-section size (X/Y) and depth (Z)
+      "SizeX": 45.0,
+      "SizeY": 45.0,
+      "SizeZ": 0.03,
+      // Beam edge softness
+      "SoftX": 1.0,
+      "SoftY": 1.0,
+      // Beam shape skirt factors
+      "Skirt": 0.5,
+      "SkirtNear": 1.0,
+      // Distance in front of the eye to place the light origin (units)
+      "ForwardDistance": 54.0,
+      // Eye height offsets (units) - standing / crouching
+      "StandEyeOffsetZ": 64.0,
+      "CrouchEyeOffsetZ": 46.0,
       // Only the owner can see the light
       "OwnerOnly": true
     }
