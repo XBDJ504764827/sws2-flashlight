@@ -30,19 +30,19 @@
 
 ```
 csgo/addons/swiftlys2/plugins/
-└── SWS2Flashlight/
+└── sws2-flashlight/
 ```
 
-3. Start / reload the server, or run `sw_load SWS2Flashlight` in console.
+3. Start / reload the server, or run `sw_load sws2-flashlight` in console.
 
 ## Configuration
 
-First run creates `csgo/addons/swiftlys2/configs/SWS2Flashlight/config.jsonc`
+First run creates `csgo/addons/swiftlys2/configs/sws2-flashlight/config.jsonc`
 (from the bundled template `resources/templates/config.template.jsonc`):
 
 ```jsonc
 {
-  "SWS2Flashlight": {
+  "sws2-flashlight": {
     // Enable debug logging
     "Debug": false,
 
@@ -88,7 +88,7 @@ dotnet build
 dotnet publish -c Release
 ```
 
-The zip is generated in `build/SWS2Flashlight.zip`.
+The zip is generated in `build/sws2-flashlight.zip`.
 
 ## Versioning
 

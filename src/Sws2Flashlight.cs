@@ -5,15 +5,15 @@ using Microsoft.Extensions.Options;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.GameEventDefinitions;
 using SwiftlyS2.Shared.Plugins;
-using SWS2Flashlight.Configuration;
-using SWS2Flashlight.Services;
+using Sws2Flashlight.Configuration;
+using Sws2Flashlight.Services;
 
-namespace SWS2Flashlight;
+namespace Sws2Flashlight;
 
 /// <summary>
 /// Main plugin entry point. Plugin metadata is defined in <c>Metadata.cs</c>.
 /// </summary>
-public partial class SWS2Flashlight : BasePlugin
+public partial class Sws2Flashlight : BasePlugin
 {
     /// <summary>
     /// Current configuration, hot-reload aware.
@@ -30,7 +30,7 @@ public partial class SWS2Flashlight : BasePlugin
     /// </summary>
     private ServiceProvider _provider = null!;
 
-    public SWS2Flashlight(ISwiftlyCore core) : base(core)
+    public Sws2Flashlight(ISwiftlyCore core) : base(core)
     {
     }
 
@@ -48,7 +48,7 @@ public partial class SWS2Flashlight : BasePlugin
         var services = new ServiceCollection();
         services.AddSwiftly(Core)
             .AddOptionsWithValidateOnStart<FlashlightConfig>()
-            .BindConfiguration("SWS2Flashlight");
+            .BindConfiguration("sws2-flashlight");
 
         _provider = services.BuildServiceProvider();
         var options = _provider.GetRequiredService<IOptionsMonitor<FlashlightConfig>>();
@@ -60,7 +60,7 @@ public partial class SWS2Flashlight : BasePlugin
         options.OnChange(newConfig =>
         {
             _config = newConfig;
-            Core.Logger.LogInformation("[SWS2Flashlight] Configuration reloaded (debug: {Debug})", _config.Debug);
+            Core.Logger.LogInformation("[sws2-flashlight] Configuration reloaded (debug: {Debug})", _config.Debug);
             _manager?.ApplyConfig(_config);
         });
 
@@ -77,7 +77,7 @@ public partial class SWS2Flashlight : BasePlugin
         Core.GameEvent.HookPost<EventPlayerDeath>(OnPlayerDeath);
         Core.GameEvent.HookPost<EventPlayerTeam>(OnPlayerTeam);
 
-        Core.Logger.LogInformation("[SWS2Flashlight] Plugin loaded (hotReload: {HotLoad})", hotReload);
+        Core.Logger.LogInformation("[sws2-flashlight] Plugin loaded (hotReload: {HotLoad})", hotReload);
     }
 
     public override void Unload()

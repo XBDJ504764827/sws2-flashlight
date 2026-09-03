@@ -2,12 +2,12 @@ using SwiftlyS2.Shared.Events;
 using SwiftlyS2.Shared.GameEventDefinitions;
 using SwiftlyS2.Shared.Misc;
 
-namespace SWS2Flashlight;
+namespace Sws2Flashlight;
 
 /// <summary>
 /// Event wiring: F-key toggle, disconnect cleanup, map unload cleanup, death cleanup.
 /// </summary>
-public partial class SWS2Flashlight
+public partial class Sws2Flashlight
 {
     /// <summary>
     /// Handles client key state changes. F key press toggles the flashlight.

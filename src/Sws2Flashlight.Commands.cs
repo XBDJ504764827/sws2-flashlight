@@ -1,12 +1,12 @@
 using SwiftlyS2.Shared.Commands;
 using SwiftlyS2.Shared.Translation;
 
-namespace SWS2Flashlight;
+namespace Sws2Flashlight;
 
 /// <summary>
 /// Player-facing commands: /fl toggles the flashlight, /fl on|off sets the state explicitly.
 /// </summary>
-public partial class SWS2Flashlight
+public partial class Sws2Flashlight
 {
     [Command("fl", registerRaw: true, permission: "", helpText: "Toggle your flashlight")]
     public void FlashlightCommand(ICommandContext context)

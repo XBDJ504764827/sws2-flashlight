@@ -34,22 +34,22 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Restore dependencies
-        run: dotnet restore SWS2Flashlight.csproj
+        run: dotnet restore sws2-flashlight.csproj
 
       - name: Build (compile check)
-        run: dotnet build SWS2Flashlight.csproj -c Release --no-restore
+        run: dotnet build sws2-flashlight.csproj -c Release --no-restore
 
       - name: Publish test package
         run: |
-          dotnet publish SWS2Flashlight.csproj -c Release --no-restore --no-build
+          dotnet publish sws2-flashlight.csproj -c Release --no-restore --no-build
           echo "Published files:"
-          Get-ChildItem -Recurse build/publish/SWS2Flashlight | Select-Object FullName
+          Get-ChildItem -Recurse build/publish/sws2-flashlight | Select-Object FullName
 
       - name: Upload test package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SWS2Flashlight-test-package
-          path: build/SWS2Flashlight.zip
+          name: sws2-flashlight-test-package
+          path: build/sws2-flashlight.zip
           if-no-files-found: error
           retention-days: 14
 
@@ -59,7 +59,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const zipPath = 'build/SWS2Flashlight.zip';
+            const zipPath = 'build/sws2-flashlight.zip';
             const zipExists = fs.existsSync(zipPath);
             const sha = context.sha.slice(0, 7);
             const body = `### 🧪 Test Package Ready
@@ -69,7 +69,7 @@ jobs:
               ? 'Download the test package from the **Artifacts** section of this workflow run (see "Artifacts" on the right), or use the direct link below once uploaded:'
               : 'The package artifact is attached to this workflow run.'}
 
-            **Install:** Extract the zip into \`csgo/addons/swiftlys2/plugins/\` and run \`sw_load SWS2Flashlight\` (or restart the server).
+            **Install:** Extract the zip into \`csgo/addons/swiftlys2/plugins/\` and run \`sw_load sws2-flashlight\` (or restart the server).
             `;
             github.rest.issues.createComment({
               owner: context.repo.owner,

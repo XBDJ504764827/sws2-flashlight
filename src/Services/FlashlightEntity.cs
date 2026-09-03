@@ -4,9 +4,9 @@ using SwiftlyS2.Shared.Misc;
 using SwiftlyS2.Shared.Natives;
 using SwiftlyS2.Shared.Players;
 using SwiftlyS2.Shared.SchemaDefinitions;
-using SWS2Flashlight.Configuration;
+using Sws2Flashlight.Configuration;
 
-namespace SWS2Flashlight.Services;
+namespace Sws2Flashlight.Services;
 
 /// <summary>
 /// Wraps a dynamically created <c>light_spot</c> entity that acts as a player-owned flashlight.
@@ -53,7 +53,7 @@ public sealed class FlashlightEntity : IDisposable
             _light = _core.EntitySystem.CreateEntity<CLightSpotEntity>();
             if (_light == null || !_light.IsValid)
             {
-                _core.Logger.LogWarning("[SWS2Flashlight] Failed to create light_spot entity for player {PlayerId}", _playerId);
+                _core.Logger.LogWarning("[sws2-flashlight] Failed to create light_spot entity for player {PlayerId}", _playerId);
                 return;
             }
 
@@ -72,7 +72,7 @@ public sealed class FlashlightEntity : IDisposable
         }
         catch (Exception ex)
         {
-            _core.Logger.LogError(ex, "[SWS2Flashlight] Error creating flashlight entity for player {PlayerId}", _playerId);
+            _core.Logger.LogError(ex, "[sws2-flashlight] Error creating flashlight entity for player {PlayerId}", _playerId);
             Dispose();
         }
     }
@@ -167,7 +167,7 @@ public sealed class FlashlightEntity : IDisposable
         }
         catch (Exception ex)
         {
-            _core.Logger.LogDebug(ex, "[SWS2Flashlight] Error despawn light entity for player {PlayerId}", _playerId);
+            _core.Logger.LogDebug(ex, "[sws2-flashlight] Error despawn light entity for player {PlayerId}", _playerId);
         }
         finally
         {

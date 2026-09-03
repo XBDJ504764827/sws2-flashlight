@@ -1,9 +1,9 @@
 using System.Text.Json.Serialization;
 
-namespace SWS2Flashlight.Configuration;
+namespace Sws2Flashlight.Configuration;
 
 /// <summary>
-/// SWS2Flashlight plugin configuration (config.jsonc, bound from section "SWS2Flashlight").
+/// Sws2Flashlight plugin configuration (config.jsonc, bound from section "Sws2Flashlight").
 /// </summary>
 public sealed class FlashlightConfig
 {

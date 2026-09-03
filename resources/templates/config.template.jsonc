@@ -1,5 +1,5 @@
 {
-  "SWS2Flashlight": {
+  "sws2-flashlight": {
     "Debug": false,
     "Behavior": {
       "UpdateIntervalTicks": 1,

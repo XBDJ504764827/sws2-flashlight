@@ -2,9 +2,9 @@ using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Players;
 using SwiftlyS2.Shared.Scheduler;
-using SWS2Flashlight.Configuration;
+using Sws2Flashlight.Configuration;
 
-namespace SWS2Flashlight.Services;
+namespace Sws2Flashlight.Services;
 
 /// <summary>
 /// Manages per-player flashlight entities: creation, per-tick following, teardown on death/leave/map change.
@@ -80,7 +80,7 @@ public sealed class FlashlightManager : IDisposable
             {
                 flashlight.Dispose();
                 _flashlights.Remove(playerId);
-                _core.Logger.LogDebug("[SWS2Flashlight] Flashlight off for player {PlayerId} ({Reason})", playerId, reason);
+                _core.Logger.LogDebug("[sws2-flashlight] Flashlight off for player {PlayerId} ({Reason})", playerId, reason);
             }
         }
     }
@@ -176,10 +176,10 @@ public sealed class FlashlightManager : IDisposable
         if (notify && _config.Behavior.NotifyOnToggle)
         {
             var localizer = _core.Translation.GetPlayerLocalizer(player);
-            player.SendChat($"[SWS2Flashlight] {localizer["flashlight.on"]}");
+            player.SendChat($"[sws2-flashlight] {localizer["flashlight.on"]}");
         }
 
-        _core.Logger.LogDebug("[SWS2Flashlight] Flashlight on for player {PlayerId}", playerId);
+        _core.Logger.LogDebug("[sws2-flashlight] Flashlight on for player {PlayerId}", playerId);
         return true;
     }
 

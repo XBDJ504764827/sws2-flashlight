@@ -78,26 +78,26 @@ jobs:
           }
 
       - name: Restore dependencies
-        run: dotnet restore SWS2Flashlight.csproj
+        run: dotnet restore sws2-flashlight.csproj
 
       - name: Build
         run: |
-          dotnet build SWS2Flashlight.csproj -c Release --no-restore `
+          dotnet build sws2-flashlight.csproj -c Release --no-restore `
             -p:Version=${{ needs.versioning.outputs.semVer }} `
             -p:InformationalVersion=${{ needs.versioning.outputs.informationalVersion }} `
             -p:FileVersion=${{ needs.versioning.outputs.semVer }} `
             -p:DefineConstants="WORKFLOW"
 
       - name: Publish release package
-        run: dotnet publish SWS2Flashlight.csproj -c Release --no-restore --no-build
+        run: dotnet publish sws2-flashlight.csproj -c Release --no-restore --no-build
 
       - name: Rename ZIP to versioned name
         id: zip_name
         shell: pwsh
         run: |
-          $zip = "build/SWS2Flashlight.zip"
+          $zip = "build/sws2-flashlight.zip"
           if (Test-Path $zip) {
-            $newName = "SWS2Flashlight-v${{ needs.versioning.outputs.semVer }}.zip"
+            $newName = "sws2-flashlight-v${{ needs.versioning.outputs.semVer }}.zip"
             Move-Item $zip $newName -Force
             Write-Host "Renamed zip to $newName"
             "zip_name=$newName" >> $env:GITHUB_OUTPUT
@@ -110,7 +110,7 @@ jobs:
       - name: Upload release asset
         uses: actions/upload-artifact@v4
         with:
-          name: SWS2Flashlight-v${{ needs.versioning.outputs.semVer }}
+          name: sws2-flashlight-v${{ needs.versioning.outputs.semVer }}
           path: ${{ steps.zip_name.outputs.zip_name }}
           if-no-files-found: error
 
@@ -141,7 +141,7 @@ jobs:
       - name: Download release asset
         uses: actions/download-artifact@v4
         with:
-          name: SWS2Flashlight-v${{ needs.versioning.outputs.semVer }}
+          name: sws2-flashlight-v${{ needs.versioning.outputs.semVer }}
           path: ./release
 
       - name: Collect commit summary
@@ -163,14 +163,14 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: release/SWS2Flashlight-v${{ needs.versioning.outputs.semVer }}.zip
+          files: release/sws2-flashlight-v${{ needs.versioning.outputs.semVer }}.zip
           tag_name: ${{ env.TAG_NAME }}
           name: Release v${{ needs.versioning.outputs.semVer }}
           body: |
-            ## ✨ SWS2Flashlight v${{ needs.versioning.outputs.semVer }}
+            ## ✨ sws2-flashlight v${{ needs.versioning.outputs.semVer }}
 
             ### 📝 Recent Changes
             ${{ steps.commits.outputs.summary }}
 
             ### 📦 Install
-            Extract the zip into `csgo/addons/swiftlys2/plugins/` and run `sw_load SWS2Flashlight` (or restart the server).
+            Extract the zip into `csgo/addons/swiftlys2/plugins/` and run `sw_load sws2-flashlight` (or restart the server).
