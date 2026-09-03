@@ -14,6 +14,6 @@ namespace SWS2Flashlight;
     Name = "SWS2 Flashlight",
     Author = "SWS2Flashlight Team",
     Description = "A flashlight plugin for SwiftlyS2: press F to toggle your flashlight.",
-    Website = "https://github.com/xbdj/SWS2Flashlight"
+    Website = "https://github.com/XBDJ504764827/sws2-flashlight"
 )]
 public partial class SWS2Flashlight;

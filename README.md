@@ -4,9 +4,9 @@
 </div>
 
 <p align="center">
-  <img src="https://img.shields.io/github/downloads/xbdj/SWS2Flashlight/total" alt="Downloads">
-  <img src="https://img.shields.io/github/v/release/xbdj/SWS2Flashlight" alt="Release">
-  <img src="https://img.shields.io/github/license/xbdj/SWS2Flashlight" alt="License">
+  <img src="https://img.shields.io/github/downloads/XBDJ504764827/sws2-flashlight/total" alt="Downloads">
+  <img src="https://img.shields.io/github/v/release/XBDJ504764827/sws2-flashlight" alt="Release">
+  <img src="https://img.shields.io/github/license/XBDJ504764827/sws2-flashlight" alt="License">
 </p>
 
 ## Features
