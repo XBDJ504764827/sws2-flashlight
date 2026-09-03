@@ -69,7 +69,7 @@ jobs:
               ? 'Download the test package from the **Artifacts** section of this workflow run (see "Artifacts" on the right), or use the direct link below once uploaded:'
               : 'The package artifact is attached to this workflow run.'}
 
-            **Install:** Extract the zip into \`csgo/addons/swiftlys2/plugins/\` and run \`sw_load sws2-flashlight\` (or restart the server).
+            **Install:** Extract the zip into \`csgo/addons/swiftlys2/plugins/\` and run \`sw plugins load sws2-flashlight\` (or restart the server).
             `;
             github.rest.issues.createComment({
               owner: context.repo.owner,

@@ -33,7 +33,7 @@ csgo/addons/swiftlys2/plugins/
 └── sws2-flashlight/
 ```
 
-3. Start / reload the server, or run `sw_load sws2-flashlight` in console.
+3. Start / reload the server, or run `sw plugins load sws2-flashlight` in console.
 
 ## Configuration
 
@@ -92,12 +92,9 @@ The zip is generated in `build/sws2-flashlight.zip`.
 
 ## Versioning
 
-Release workflow uses [GitVersion](https://gitversion.net/):
+The release workflow bumps the patch version automatically:
 
-- Every push to `main` (with source changes) computes a new patch version automatically.
-- Commit messages can force a bump:
-  - `+semver: feature` → minor bump
-  - `+semver: breaking` → major bump
+- Every push to `main` (with source changes) computes the next version from the latest `vX.Y.Z` tag (patch +1).
 - `WORKFLOW_VERSION` placeholder in `src/Metadata.cs` is replaced at release build time.
 
 ## License

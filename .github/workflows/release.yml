@@ -7,7 +7,6 @@ on:
       - "src/**"
       - "resources/**"
       - "*.csproj"
-      - "GitVersion.yml"
       - ".github/workflows/release.yml"
 
 permissions:
@@ -15,12 +14,10 @@ permissions:
 
 jobs:
   versioning:
-    name: Compute Version
+    name: Compute Next Version
     runs-on: ubuntu-latest
     outputs:
-      fullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}
-      semVer: ${{ steps.gitversion.outputs.semVer }}
-      informationalVersion: ${{ steps.gitversion.outputs.informationalVersion }}
+      semVer: ${{ steps.compute.outputs.semVer }}
     steps:
       - name: Checkout with full history
         uses: actions/checkout@v4
@@ -30,20 +27,45 @@ jobs:
       - name: Fetch all tags
         run: git fetch --tags --force
 
-      - name: Setup GitVersion
-        uses: gittools/actions/gitversion/setup@v3.0.0
-        with:
-          versionSpec: "5.x"
-
-      - name: Determine Version
-        id: gitversion
-        uses: gittools/actions/gitversion/execute@v3.0.0
-
-      - name: Show version
+      - name: Compute Next Version (patch bump from latest tag)
+        id: compute
         run: |
-          echo "FullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}"
-          echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
-          echo "InformationalVersion: ${{ steps.gitversion.outputs.informationalVersion }}"
+          # Find the latest version tag (vX.Y.Z), excluding pre-release tags like vX.Y.Z-ci.N
+          LATEST_TAG=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n 1 || echo "")
+
+          if [ -z "$LATEST_TAG" ]; then
+            # No version tags yet -> start with 1.0.0 (skip if it would duplicate an existing tag)
+            if git rev-parse -q --verify "refs/tags/v1.0.0" >/dev/null 2>&1; then
+              NEW_VERSION="1.0.1"
+            else
+              NEW_VERSION="1.0.0"
+            fi
+          else
+            # Strip 'v' and split into parts
+            VER=${LATEST_TAG#v}
+            MAJOR=$(echo "$VER" | cut -d. -f1)
+            MINOR=$(echo "$VER" | cut -d. -f2)
+            PATCH=$(echo "$VER" | cut -d. -f3)
+            # Patch bump: X.Y.(Z+1)
+            NEW_PATCH=$((PATCH + 1))
+            NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+          fi
+
+          # Guard: if the computed tag already exists, bump patch again (max 10 tries)
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if ! git rev-parse -q --verify "refs/tags/v$NEW_VERSION" >/dev/null 2>&1; then
+              break
+            fi
+            # Already exists: bump patch again
+            P1=$(echo "$NEW_VERSION" | cut -d. -f1)
+            P2=$(echo "$NEW_VERSION" | cut -d. -f2)
+            P3=$(echo "$NEW_VERSION" | cut -d. -f3)
+            NEW_VERSION="$P1.$P2.$((P3 + 1))"
+          done
+
+          echo "Latest tag: ${LATEST_TAG:-<none>}"
+          echo "Next version: v$NEW_VERSION"
+          echo "semVer=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build & Package
@@ -64,7 +86,7 @@ jobs:
           dotnet-version: "10.0.x"
 
       # ---- Version injection into source ----
-      # Replace WORKFLOW_VERSION placeholder in Metadata with the GitVersion computed semVer.
+      # Replace WORKFLOW_VERSION placeholder in Metadata with the computed version.
       - name: Inject version into source
         shell: pwsh
         run: |
@@ -72,7 +94,7 @@ jobs:
           Get-ChildItem -Path src -Filter "*.cs" -Recurse | ForEach-Object {
             $content = Get-Content $_.FullName -Raw
             if ($content -match 'WORKFLOW_VERSION') {
-              Write-Host "Updating version in $($_.Name)"
+              Write-Host "Updating version in $($_.Name) to $version"
               $content -replace 'WORKFLOW_VERSION', $version | Set-Content $_.FullName -NoNewline
             }
           }
@@ -84,7 +106,6 @@ jobs:
         run: |
           dotnet build sws2-flashlight.csproj -c Release --no-restore `
             -p:Version=${{ needs.versioning.outputs.semVer }} `
-            -p:InformationalVersion=${{ needs.versioning.outputs.informationalVersion }} `
             -p:FileVersion=${{ needs.versioning.outputs.semVer }} `
             -p:DefineConstants="WORKFLOW"
 
@@ -173,4 +194,4 @@ jobs:
             ${{ steps.commits.outputs.summary }}
 
             ### 📦 Install
-            Extract the zip into `csgo/addons/swiftlys2/plugins/` and run `sw_load sws2-flashlight` (or restart the server).
+            Extract the zip into `csgo/addons/swiftlys2/plugins/` and run `sw plugins load sws2-flashlight` (or restart the server).
