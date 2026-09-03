@@ -1,0 +1,176 @@
+name: Release - Auto Version & Publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "resources/**"
+      - "*.csproj"
+      - "GitVersion.yml"
+      - ".github/workflows/release.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  versioning:
+    name: Compute Version
+    runs-on: ubuntu-latest
+    outputs:
+      fullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}
+      semVer: ${{ steps.gitversion.outputs.semVer }}
+      informationalVersion: ${{ steps.gitversion.outputs.informationalVersion }}
+    steps:
+      - name: Checkout with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      - name: Setup GitVersion
+        uses: gittools/actions/gitversion/setup@v3.0.0
+        with:
+          versionSpec: "5.x"
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v3.0.0
+
+      - name: Show version
+        run: |
+          echo "FullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}"
+          echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+          echo "InformationalVersion: ${{ steps.gitversion.outputs.informationalVersion }}"
+
+  build:
+    name: Build & Package
+    needs: versioning
+    runs-on: windows-latest
+    timeout-minutes: 30
+    outputs:
+      zip_name: ${{ steps.zip_name.outputs.zip_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      # ---- Version injection into source ----
+      # Replace WORKFLOW_VERSION placeholder in Metadata with the GitVersion computed semVer.
+      - name: Inject version into source
+        shell: pwsh
+        run: |
+          $version = "${{ needs.versioning.outputs.semVer }}"
+          Get-ChildItem -Path src -Filter "*.cs" -Recurse | ForEach-Object {
+            $content = Get-Content $_.FullName -Raw
+            if ($content -match 'WORKFLOW_VERSION') {
+              Write-Host "Updating version in $($_.Name)"
+              $content -replace 'WORKFLOW_VERSION', $version | Set-Content $_.FullName -NoNewline
+            }
+          }
+
+      - name: Restore dependencies
+        run: dotnet restore SWS2Flashlight.csproj
+
+      - name: Build
+        run: |
+          dotnet build SWS2Flashlight.csproj -c Release --no-restore `
+            -p:Version=${{ needs.versioning.outputs.semVer }} `
+            -p:InformationalVersion=${{ needs.versioning.outputs.informationalVersion }} `
+            -p:FileVersion=${{ needs.versioning.outputs.semVer }} `
+            -p:DefineConstants="WORKFLOW"
+
+      - name: Publish release package
+        run: dotnet publish SWS2Flashlight.csproj -c Release --no-restore --no-build
+
+      - name: Rename ZIP to versioned name
+        id: zip_name
+        shell: pwsh
+        run: |
+          $zip = "build/SWS2Flashlight.zip"
+          if (Test-Path $zip) {
+            $newName = "SWS2Flashlight-v${{ needs.versioning.outputs.semVer }}.zip"
+            Move-Item $zip $newName -Force
+            Write-Host "Renamed zip to $newName"
+            "zip_name=$newName" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "Zip not found at $zip"
+            Get-ChildItem -Recurse build | Select-Object FullName
+            exit 1
+          }
+
+      - name: Upload release asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: SWS2Flashlight-v${{ needs.versioning.outputs.semVer }}
+          path: ${{ steps.zip_name.outputs.zip_name }}
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: [versioning, build]
+    runs-on: ubuntu-latest
+    env:
+      TAG_NAME: v${{ needs.versioning.outputs.semVer }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create tag locally
+        run: |
+          TAG="${{ env.TAG_NAME }}"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists, skipping tag creation"
+          else
+            git tag -a "$TAG" -m "Release v${{ needs.versioning.outputs.semVer }}"
+            git push origin "$TAG"
+          fi
+
+      - name: Download release asset
+        uses: actions/download-artifact@v4
+        with:
+          name: SWS2Flashlight-v${{ needs.versioning.outputs.semVer }}
+          path: ./release
+
+      - name: Collect commit summary
+        id: commits
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            COMMITS=$(git log ${PREV_TAG}..HEAD --pretty=format:"• %s (\`%h\`)" | head -c 900)
+          else
+            COMMITS=$(git log -15 --pretty=format:"• %s (\`%h\`)" | head -c 900)
+          fi
+          if [ -z "$COMMITS" ]; then
+            COMMITS="No commit information available"
+          fi
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/SWS2Flashlight-v${{ needs.versioning.outputs.semVer }}.zip
+          tag_name: ${{ env.TAG_NAME }}
+          name: Release v${{ needs.versioning.outputs.semVer }}
+          body: |
+            ## ✨ SWS2Flashlight v${{ needs.versioning.outputs.semVer }}
+
+            ### 📝 Recent Changes
+            ${{ steps.commits.outputs.summary }}
+
+            ### 📦 Install
+            Extract the zip into `csgo/addons/swiftlys2/plugins/` and run `sw_load SWS2Flashlight` (or restart the server).

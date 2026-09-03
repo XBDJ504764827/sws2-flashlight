@@ -1,0 +1,79 @@
+name: CI - Build & Test Package
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "resources/**"
+      - "*.csproj"
+      - "GitVersion.yml"
+      - ".github/workflows/ci.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build-and-test-package:
+    name: Build & Test Package
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore SWS2Flashlight.csproj
+
+      - name: Build (compile check)
+        run: dotnet build SWS2Flashlight.csproj -c Release --no-restore
+
+      - name: Publish test package
+        run: |
+          dotnet publish SWS2Flashlight.csproj -c Release --no-restore --no-build
+          echo "Published files:"
+          Get-ChildItem -Recurse build/publish/SWS2Flashlight | Select-Object FullName
+
+      - name: Upload test package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SWS2Flashlight-test-package
+          path: build/SWS2Flashlight.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Comment test package link on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const zipPath = 'build/SWS2Flashlight.zip';
+            const zipExists = fs.existsSync(zipPath);
+            const sha = context.sha.slice(0, 7);
+            const body = `### 🧪 Test Package Ready
+            Build succeeded for commit \`${sha}\`.
+
+            ${zipExists
+              ? 'Download the test package from the **Artifacts** section of this workflow run (see "Artifacts" on the right), or use the direct link below once uploaded:'
+              : 'The package artifact is attached to this workflow run.'}
+
+            **Install:** Extract the zip into \`csgo/addons/swiftlys2/plugins/\` and run \`sw_load SWS2Flashlight\` (or restart the server).
+            `;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });

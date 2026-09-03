@@ -1,0 +1,6 @@
+{
+  "flashlight.on": "手电筒已开启",
+  "flashlight.off": "手电筒已关闭",
+  "flashlight.only_players": "该命令只能由玩家使用。",
+  "flashlight.dead": "你必须在存活状态下才能使用手电筒。"
+}

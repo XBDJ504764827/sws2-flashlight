@@ -1,0 +1,22 @@
+{
+  "SWS2Flashlight": {
+    "Debug": false,
+    "Behavior": {
+      "UpdateIntervalTicks": 1,
+      "NotifyOnToggle": true,
+      "TurnOffOnDeath": true,
+      "TurnOffOnTeamSwitch": true,
+      "DisableInSpectator": true
+    },
+    "Light": {
+      "Color": "#FFFFFF",
+      "Brightness": 1.0,
+      "Range": 2000.0,
+      "Theta": 15.0,
+      "Phi": 25.0,
+      "Falloff": 1.0,
+      "CastShadows": false,
+      "OwnerOnly": true
+    }
+  }
+}

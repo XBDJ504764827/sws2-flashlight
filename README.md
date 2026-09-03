@@ -1,0 +1,105 @@
+<div align="center">
+  <h2><strong>SWS2 Flashlight</strong></h2>
+  <h3>Press <kbd>F</kbd> to toggle a flashlight for SwiftlyS2.</h3>
+</div>
+
+<p align="center">
+  <img src="https://img.shields.io/github/downloads/xbdj/SWS2Flashlight/total" alt="Downloads">
+  <img src="https://img.shields.io/github/v/release/xbdj/SWS2Flashlight" alt="Release">
+  <img src="https://img.shields.io/github/license/xbdj/SWS2Flashlight" alt="License">
+</p>
+
+## Features
+
+- Press <kbd>F</kbd> to toggle your flashlight (press again to turn it off)
+- Flashlight follows your eye position and view direction in real time
+- Automatic cleanup on death, team switch, disconnect, and map change
+- Hot-reloadable configuration (`config.jsonc`)
+- Light only visible to the owner by default (configurable)
+- Commands: `/fl`, `/flashlight`, `/fl2`
+- Translations: English + 简体中文
+
+## Requirements
+
+- [SwiftlyS2](https://github.com/swiftly-solution/swiftlys2) running on a CS2 dedicated server
+
+## Installation
+
+1. Download the latest release zip.
+2. Extract the folder into `csgo/addons/swiftlys2/plugins/`:
+
+```
+csgo/addons/swiftlys2/plugins/
+└── SWS2Flashlight/
+```
+
+3. Start / reload the server, or run `sw_load SWS2Flashlight` in console.
+
+## Configuration
+
+First run creates `csgo/addons/swiftlys2/configs/SWS2Flashlight/config.jsonc`
+(from the bundled template `resources/templates/config.template.jsonc`):
+
+```jsonc
+{
+  "SWS2Flashlight": {
+    // Enable debug logging
+    "Debug": false,
+
+    "Behavior": {
+      // Light update interval in ticks (64 ticks/s). 1 = every tick (smooth).
+      "UpdateIntervalTicks": 1,
+      // Show a chat message when toggling
+      "NotifyOnToggle": true,
+      // Turn off the flashlight when the player dies
+      "TurnOffOnDeath": true,
+      // Turn off the flashlight when the player switches teams
+      "TurnOffOnTeamSwitch": true,
+      // Disable flashlight for spectators
+      "DisableInSpectator": true
+    },
+
+    "Light": {
+      // Light color (hex RGB / RGBA)
+      "Color": "#FFFFFF",
+      // Light brightness (float, engine clamps internally)
+      "Brightness": 1.0,
+      // Maximum range in game units (1 unit ≈ 1 cm; 2000 ≈ 20m)
+      "Range": 2000.0,
+      // Spot cone inner angle (degrees)
+      "Theta": 15.0,
+      // Spot cone outer angle (degrees)
+      "Phi": 25.0,
+      // Light falloff
+      "Falloff": 1.0,
+      // Cast shadows (more expensive)
+      "CastShadows": false,
+      // Only the owner can see the light
+      "OwnerOnly": true
+    }
+  }
+}
+```
+
+## Building
+
+```bash
+dotnet build
+dotnet publish -c Release
+```
+
+The zip is generated in `build/SWS2Flashlight.zip`.
+
+## Versioning
+
+Release workflow uses [GitVersion](https://gitversion.net/):
+
+- Every push to `main` (with source changes) computes a new patch version automatically.
+- Commit messages can force a bump:
+  - `+semver: feature` → minor bump
+  - `+semver: breaking` → major bump
+- `WORKFLOW_VERSION` placeholder in `src/Metadata.cs` is replaced at release build time.
+
+## License
+
+[MIT](LICENSE)

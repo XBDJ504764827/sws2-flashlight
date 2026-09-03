@@ -1,0 +1,6 @@
+{
+  "flashlight.on": "Flashlight ON",
+  "flashlight.off": "Flashlight OFF",
+  "flashlight.only_players": "This command can only be used by players.",
+  "flashlight.dead": "You must be alive to use the flashlight."
+}
