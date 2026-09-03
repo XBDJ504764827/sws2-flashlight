@@ -9,7 +9,6 @@ on:
       - "src/**"
       - "resources/**"
       - "*.csproj"
-      - "GitVersion.yml"
       - ".github/workflows/ci.yml"
 
 permissions:

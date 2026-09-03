@@ -3,11 +3,7 @@ name: Release - Auto Version & Publish
 on:
   push:
     branches: [main]
-    paths:
-      - "src/**"
-      - "resources/**"
-      - "*.csproj"
-      - ".github/workflows/release.yml"
+  workflow_dispatch:
 
 permissions:
   contents: write
